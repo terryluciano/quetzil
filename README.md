@@ -1,2 +1,2 @@
-# quetzil
-The quest to find the greatest pretzel... and more
+# Quetzil
+### The quest to find the greatest pretzel... and more!
