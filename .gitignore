@@ -1,5 +1,7 @@
 .vscode
 
+migrations
+
 # Logs
 logs
 *.log
