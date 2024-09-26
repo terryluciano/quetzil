@@ -20,6 +20,10 @@ export const db = drizzle(queryClient);
 const server = express();
 const port = process.env.SERVER_PORT;
 
+// body parser middleware
+server.use(express.json());
+server.use(express.urlencoded({ extended: true }));
+
 server.use(helmet());
 server.use(router);
 
