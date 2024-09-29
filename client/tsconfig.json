@@ -1,14 +1,7 @@
 {
-    "files": [],
-    "references": [
-        { "path": "./tsconfig.app.json" },
-        { "path": "./tsconfig.node.json" }
-    ],
-    "compilerOptions": {
-        "types": ["vue/client", "@vue/runtime-core"],
-        "lib": ["ESNext", "DOM"],
-        "paths": {
-            "@/*": ["./src/*"]
-        }
-    }
+  "files": [],
+  "references": [
+    { "path": "./tsconfig.app.json" },
+    { "path": "./tsconfig.node.json" }
+  ]
 }
