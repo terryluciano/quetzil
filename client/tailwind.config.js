@@ -15,6 +15,9 @@ export default {
                 "text-hover": "#39332D",
                 "placeholder-text": "#7A7A7A",
             },
+            boxShadow: {
+                input: "0 6px 4px -4px rgba(0, 0, 0, 0.2)",
+            },
         },
     },
     plugins: [],
