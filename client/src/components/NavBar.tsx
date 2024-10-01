@@ -1,7 +1,14 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import largeLogo from "../assets/large-logo.svg";
+import { useMemo } from "react";
 
 const NavBar = () => {
+    const { pathname } = useLocation();
+
+    const showLoginButton = useMemo(() => {
+        return !pathname.includes("login") && !pathname.includes("sign-up");
+    }, [pathname]);
+
     const links: { text: string; link: string }[] = [
         {
             text: "Search",
@@ -33,14 +40,16 @@ const NavBar = () => {
                         </Link>
                     ))}
                 </div>
-                <div className="flex flex-row justify-end self-center">
-                    <Link
-                        to="/login"
-                        className="flex-center rounded-xl px-3 h-10 transition-all ease-in-out bg-text hover:bg-text-hover text-bg active:bg-text-hover active:scale-95 cursor-pointer"
-                    >
-                        Login
-                    </Link>
-                </div>
+                {showLoginButton && (
+                    <div className="flex flex-row justify-end self-center">
+                        <Link
+                            to="/login"
+                            className="flex-center rounded-xl px-3 h-10 transition-all ease-in-out bg-text hover:bg-text-hover text-bg active:bg-text-hover active:scale-95 cursor-pointer"
+                        >
+                            Login
+                        </Link>
+                    </div>
+                )}
             </nav>
         </>
     );

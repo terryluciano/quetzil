@@ -2,7 +2,7 @@ import { forwardRef, HTMLProps, ReactNode } from "react";
 import { twMerge } from "tailwind-merge";
 
 interface InputProps extends HTMLProps<HTMLInputElement> {
-    divClassName?: string;
+    divclassname?: string;
     righticon?: ReactNode | JSX.Element;
     lefticon?: ReactNode | JSX.Element;
 }
@@ -12,7 +12,7 @@ export const InputField = forwardRef<HTMLInputElement, InputProps>(
         <div
             className={twMerge(
                 "w-full shadow-input gap-2 flex-center flex-row border-b-[1px] border-b-solid border-text px-2",
-                props?.divClassName,
+                props?.divclassname,
             )}
         >
             {props?.lefticon}
