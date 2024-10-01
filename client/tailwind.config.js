@@ -15,8 +15,14 @@ export default {
                 "text-hover": "#39332D",
                 "placeholder-text": "#7A7A7A",
             },
+            fontSize: {
+                32: "2rem",
+            },
             boxShadow: {
                 input: "0 6px 4px -4px rgba(0, 0, 0, 0.2)",
+            },
+            borderWidth: {
+                1: "1px",
             },
         },
     },
