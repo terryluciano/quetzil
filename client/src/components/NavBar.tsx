@@ -1,8 +1,11 @@
 import { Link, useLocation } from "react-router-dom";
 import largeLogo from "../assets/large-logo.svg";
 import { useMemo } from "react";
+import { useContext } from "react";
+import { AuthContext } from "../Context";
 
 const NavBar = () => {
+    const { isAuth } = useContext(AuthContext);
     const { pathname } = useLocation();
 
     const showLoginButton = useMemo(() => {
@@ -43,10 +46,10 @@ const NavBar = () => {
                 {showLoginButton && (
                     <div className="flex flex-row justify-end self-center">
                         <Link
-                            to="/login"
+                            to={isAuth ? "/logout" : "/login"}
                             className="flex-center rounded-xl px-3 h-10 transition-all ease-in-out bg-text hover:bg-text-hover text-bg active:bg-text-hover active:scale-95 cursor-pointer"
                         >
-                            Login
+                            {isAuth ? "Logout" : "Login"}
                         </Link>
                     </div>
                 )}
