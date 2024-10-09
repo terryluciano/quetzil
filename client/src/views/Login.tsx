@@ -1,7 +1,11 @@
 import { Link } from "react-router-dom";
 import AuthFormWrapper from "../components/AuthFormWrapper";
-import { HTMLAttributes } from "react";
+import { createRef, HTMLAttributes } from "react";
 import { InputField } from "../components/InputField";
+import axios from "axios";
+import { API_URL } from "../utils/url";
+import { useContext } from "react";
+import { AuthContext } from "../Context";
 
 const FormFooter = () => {
     return (
@@ -18,10 +22,45 @@ const FormFooter = () => {
 };
 
 const Login = () => {
+    const { isAuth, setIsAuth } = useContext(AuthContext);
+
+    const emailRef = createRef<HTMLInputElement>();
+    const passwordRef = createRef<HTMLInputElement>();
+
+    const login = async () => {
+        try {
+            if (!isAuth) {
+                const email = emailRef.current?.value;
+                const password = passwordRef.current?.value;
+                if (!email || !password) {
+                    return;
+                }
+
+                const res = await axios.post(
+                    `${API_URL}/auth/login`,
+                    {
+                        email,
+                        password,
+                    },
+                    {
+                        withCredentials: true,
+                    },
+                );
+
+                if (res.status === 200) {
+                    console.log(res.data);
+                    setIsAuth(true);
+                }
+            } else {
+                return console.log("already logged in");
+            }
+        } catch (e) {
+            console.error(e);
+        }
+    };
+
     const buttonProps: HTMLAttributes<HTMLButtonElement> = {
-        onClick: () => {
-            console.log("clicked");
-        },
+        onClick: login,
     };
 
     return (
@@ -37,8 +76,10 @@ const Login = () => {
                     <InputField
                         placeholder="Email"
                         divclassname="shadow-none"
+                        ref={emailRef}
                     />
                     <InputField
+                        ref={passwordRef}
                         placeholder="Password"
                         divclassname="shadow-none"
                     />
