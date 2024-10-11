@@ -1,60 +1,62 @@
-import { BrowserRouter, Route, Routes, useNavigate } from 'react-router-dom';
-import { useEffect, useState } from 'react';
+import { useState } from "react";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
 
-import { AuthContext } from './Context.ts';
+import { AuthContext, Toast, ToastContext } from "./Context.ts";
 
-import Home from './views/Home.tsx';
-import AppLayout from './components/AppLayout.tsx';
-import Login from './views/Login.tsx';
-import SignUp from './views/SignUp.tsx';
-import AddRating from './views/AddRating.tsx';
-import Search from './views/Search.tsx';
-import Logout from './views/Logout.tsx';
-import { API_URL } from './utils/url.ts';
-import axios from 'axios';
+import AppLayout from "./components/AppLayout.tsx";
+import AddRating from "./views/AddRating.tsx";
+import Home from "./views/Home.tsx";
+import Login from "./views/Login.tsx";
+import Logout from "./views/Logout.tsx";
+import Search from "./views/Search.tsx";
+import SignUp from "./views/SignUp.tsx";
 
 function App() {
-	const navigate = useNavigate();
-	const [isAuth, setIsAuth] = useState<boolean | null>(null);
+    const [isAuth, setIsAuth] = useState<boolean | null>(null);
+    const [toasts, setToasts] = useState<Toast[]>([]);
+    const addToast = (toast: Pick<Toast, "message" | "type" | "duration">) => {
+        const id = Math.floor(Math.random() * 1000000000);
 
-	const getAuthStatus = async () => {
-		const res = await axios.get(`${API_URL}/auth/status`, {
-			withCredentials: true,
-		});
-		if (res.status === 200) {
-			setIsAuth(true);
-			navigate('/');
-		} else {
-			setIsAuth(false);
-		}
-	};
+        setToasts([
+            {
+                id,
+                message: toast.message,
+                type: toast.type,
+                duration: toast.duration,
+            },
+        ]);
+    };
 
-	useEffect(() => {
-		getAuthStatus();
-	}, []);
-
-	return (
-		<AuthContext.Provider
-			value={{
-				isAuth,
-				setIsAuth,
-			}}
-		>
-			<BrowserRouter>
-				<Routes>
-					<Route path='/' element={<AppLayout />}>
-						<Route path='/' element={<Home />} />
-						<Route path='/login' element={<Login />} />
-						<Route path='/logout' element={<Logout />} />
-						<Route path='/sign-up' element={<SignUp />} />
-						<Route path='/add-rating' element={<AddRating />} />
-						<Route path='/search' element={<Search />} />
-					</Route>
-					<Route path='/*' element={<h1>404</h1>} />
-				</Routes>
-			</BrowserRouter>
-		</AuthContext.Provider>
-	);
+    return (
+        <AuthContext.Provider
+            value={{
+                isAuth,
+                setIsAuth,
+            }}
+        >
+            <ToastContext.Provider
+                value={{
+                    toasts,
+                    setToasts,
+                    addToast,
+                }}
+            >
+                <BrowserRouter>
+                    <Routes>
+                        <Route path="/" element={<AppLayout />}>
+                            <Route path="/" element={<Home />} />
+                            <Route path="/login" element={<Login />} />
+                            <Route path="/logout" element={<Logout />} />
+                            <Route path="/sign-up" element={<SignUp />} />
+                            <Route path="/add-rating" element={<AddRating />} />
+                            <Route path="/search" element={<Search />} />
+                        </Route>
+                        <Route path="/*" element={<h1>404</h1>} />
+                    </Routes>
+                </BrowserRouter>
+            </ToastContext.Provider>
+        </AuthContext.Provider>
+    );
 }
 
 export default App;
