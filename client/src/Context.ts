@@ -9,6 +9,7 @@ export const AuthContext = createContext<{
 });
 
 export type Toast = {
+    id: number;
     message: string;
     type: "success" | "error" | "info";
     duration?: number;
