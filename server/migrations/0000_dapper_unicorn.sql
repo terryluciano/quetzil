@@ -23,14 +23,18 @@ CREATE TABLE IF NOT EXISTS "restaurants" (
 	"cuisine" text[] DEFAULT ARRAY[]::text[]
 );
 --> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "sessions" (
+	"sid" text PRIMARY KEY NOT NULL,
+	"data" json NOT NULL,
+	"expires_at" timestamp
+);
+--> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "users" (
 	"id" serial PRIMARY KEY NOT NULL,
-	"username" text NOT NULL,
 	"email" text NOT NULL,
 	"passowrd" text NOT NULL,
 	"first_name" text,
 	"last_name" text,
-	CONSTRAINT "users_username_unique" UNIQUE("username"),
 	CONSTRAINT "users_email_unique" UNIQUE("email")
 );
 --> statement-breakpoint

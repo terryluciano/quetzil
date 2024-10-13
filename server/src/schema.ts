@@ -1,4 +1,5 @@
 import { sql, relations } from 'drizzle-orm';
+import { json } from 'drizzle-orm/pg-core';
 import { timestamp } from 'drizzle-orm/pg-core';
 import { serial, text, integer } from 'drizzle-orm/pg-core';
 import { pgTable } from 'drizzle-orm/pg-core';
@@ -71,12 +72,8 @@ export const foodRatingsRelations = relations(foodRatings, ({ one }) => ({
 	}),
 }));
 
-// export const sessions = pgTable('sessions', {
-// 	sid: serial('id').primaryKey(),
-//     data: text('data').notNull(),
-//     expiresAt: timestamp('expires_at').notNull(),
-// }, (table) => {
-//     return {
-//         id:
-//     }
-// });
+export const sessions = pgTable('sessions', {
+	sid: text('sid').primaryKey(),
+	data: json('data').notNull(),
+	expiresAt: timestamp('expires_at'),
+});

@@ -10,6 +10,7 @@ import session from 'express-session';
 import { createSelectSchema } from 'drizzle-zod';
 import { users } from './schema';
 import z from 'zod';
+import DrizzleSessionStore from './utils/drizzleSessionStore';
 
 // db
 const queryClient = postgres({
@@ -27,13 +28,14 @@ const port = process.env.SERVER_PORT;
 
 server.use(
 	session({
+		store: new DrizzleSessionStore(),
 		secret: process.env.SESSION_SECRET as string,
 		resave: false,
 		saveUninitialized: false,
 		cookie: {
 			httpOnly: true,
 			secure: false,
-			maxAge: 14 * 24 * 60 * 60 * 1000,
+			maxAge: 7 * 24 * 60 * 60 * 1000,
 		},
 	})
 );
