@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX IF NOT EXISTS "unique_user_food_restaurant" ON "food_ratings" USING btree ("user_id","food_id","restaurant_id");
