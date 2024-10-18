@@ -1,0 +1,1 @@
+ALTER TABLE "food_ratings" RENAME COLUMN "score" TO "rating";
