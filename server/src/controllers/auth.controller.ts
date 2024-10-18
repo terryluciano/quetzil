@@ -1,9 +1,9 @@
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import { users } from "../schema";
 import { db } from "..";
 import bcrypt from "bcrypt";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
-import { eq } from "drizzle-orm";
+import { eq, or } from "drizzle-orm";
 import { exists } from "drizzle-orm";
 import z from "zod";
 
@@ -37,39 +37,32 @@ export const signUpController = async (req: Request, res: Response) => {
 
         if (!requestData.success) {
             console.log(requestData.error.errors[0]);
-            return res
-                .status(400)
-                .json({ msg: requestData.error.errors[0].message });
+            return res.status(400).json({
+                msg: requestData.error.errors[0].message,
+                error: true,
+            });
         }
 
-        const existQuery = db
+        const existsCondition = db
             .select()
             .from(users)
             .where(eq(users.email, requestData.data.email));
-        const existsResult = await db
+        const existsQuery = await db
             .select()
             .from(users)
-            .where(exists(existQuery));
+            .where(exists(existsCondition));
 
-        if (existsResult.length > 0) {
-            if (existsResult[0].email == requestData.data.email) {
-                return res
-                    .status(409)
-                    .json({ msg: "Email is already used", error: true });
-            } else {
-                return res
-                    .status(409)
-                    .json({ msg: "User already exists", error: true });
-            }
+        if (existsQuery.length > 0) {
+            return res
+                .status(409)
+                .json({ msg: "Email is already used", error: true });
         } else {
             const hashedPassword = await bcrypt.hash(password, 10);
             const insertData: UserInsertType = {
                 ...requestData.data,
                 password: hashedPassword,
             };
-            const insertQuery = await db.insert(users).values(insertData);
-
-            console.log(insertQuery);
+            await db.insert(users).values(insertData);
             return res.status(200).json({ msg: "Sign up successful" });
         }
     } catch (e) {
@@ -170,7 +163,30 @@ export const statusController = async (req: Request, res: Response) => {
         if (req.session.user) {
             return res.status(200).json({ msg: "User is logged in" });
         } else {
-            return res.status(401).json({ msg: "User is not logged in" });
+            return res
+                .status(401)
+                .json({ msg: "User is not logged in", error: true });
+        }
+    } catch (e) {
+        console.error(e);
+        return res
+            .status(500)
+            .json({ msg: "Internal Server Error", error: true });
+    }
+};
+
+export const isLoggedIn = async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+) => {
+    try {
+        if (!req.session.user) {
+            return res
+                .status(401)
+                .json({ msg: "User is not logged in", error: true });
+        } else {
+            return next();
         }
     } catch (e) {
         console.error(e);
