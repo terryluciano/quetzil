@@ -10,6 +10,7 @@ import Login from "./views/Login.tsx";
 import Logout from "./views/Logout.tsx";
 import Search from "./views/Search.tsx";
 import SignUp from "./views/SignUp.tsx";
+import AddRestaurant from "./views/AddRestaurant.tsx";
 
 function App() {
     const [isAuth, setIsAuth] = useState<boolean | null>(null);
@@ -50,6 +51,10 @@ function App() {
                             <Route path="/sign-up" element={<SignUp />} />
                             <Route path="/add-rating" element={<AddRating />} />
                             <Route path="/search" element={<Search />} />
+                            <Route
+                                path="/add-restaurant"
+                                element={<AddRestaurant />}
+                            />
                         </Route>
                         <Route path="/*" element={<h1>404</h1>} />
                     </Routes>

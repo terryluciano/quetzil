@@ -1,9 +1,12 @@
 import { Request, Response } from "express";
 import { db } from "..";
-import { restaurantCuisines, restaurants } from "../schema";
+import { cuisines, restaurantCuisines, restaurants } from "../schema";
 import { createInsertSchema } from "drizzle-zod";
 import { eq, and, exists } from "drizzle-orm";
 import z from "zod";
+import { ilike } from "drizzle-orm";
+import { errorResponse } from "../utils/res.wrapper";
+import { States } from "../utils/constants";
 
 const insertRestaurantSchema = createInsertSchema(restaurants, {
     name: (schema) =>
@@ -29,15 +32,18 @@ export const addRestaurantController = async (req: Request, res: Response) => {
         const cuisineData = cuisineSchema.safeParse(cuisines);
 
         if (!cuisineData.success) {
-            return res.status(400).json({
-                msg: "You must provide at least one type of cuisine for the give restaurant",
-                error: true,
-            });
+            return res
+                .status(400)
+                .json(
+                    errorResponse(
+                        "You must provide at least one type of cuisine for the give restaurant",
+                    ),
+                );
         }
 
         const requestData = insertRestaurantSchema.safeParse({
             name,
-            website,
+            website: website == "" ? null : website,
             address,
             city,
             state,
@@ -45,10 +51,29 @@ export const addRestaurantController = async (req: Request, res: Response) => {
         });
 
         if (!requestData.success) {
-            return res.status(400).json({
-                msg: requestData.error.errors[0].message,
-                error: true,
-            });
+            console.log(requestData.error);
+            return res
+                .status(400)
+                .json(errorResponse(requestData.error.errors[0].message));
+        }
+
+        let acceptedState = false;
+
+        for (const state of States) {
+            if (
+                state.name.toLowerCase() ===
+                    requestData.data.state.toLowerCase() ||
+                state.abbreviation.toLowerCase() ===
+                    requestData.data.state.toLowerCase()
+            ) {
+                requestData.data.state = state.abbreviation.toUpperCase();
+                acceptedState = true;
+                break;
+            }
+        }
+
+        if (!acceptedState) {
+            return res.status(400).json(errorResponse("Invalid State"));
         }
 
         const existsCondition = db
@@ -68,10 +93,9 @@ export const addRestaurantController = async (req: Request, res: Response) => {
             .from(restaurants)
             .where(exists(existsCondition));
         if (existsQuery.length > 0) {
-            return res.status(409).json({
-                msg: "Restaurant already exists",
-                error: true,
-            });
+            return res
+                .status(409)
+                .json(errorResponse("Restaurant already exists"));
         } else {
             const insertData = {
                 ...requestData.data,
@@ -104,16 +128,41 @@ export const addRestaurantController = async (req: Request, res: Response) => {
                     .status(200)
                     .json({ msg: "Successfully submitted Restaurant" });
             } else {
-                return res.status(500).json({
-                    msg: "Internal Server Error while adding a new restaurant",
-                    error: true,
-                });
+                return res
+                    .status(500)
+                    .json(
+                        errorResponse(
+                            "Internal Server Error while adding a new restaurant",
+                        ),
+                    );
             }
         }
     } catch (err) {
         console.error(err);
-        return res
-            .status(500)
-            .json({ msg: "Internal Server Error", error: true });
+        return res.status(500).json(errorResponse());
+    }
+};
+
+export const getCuisines = async (req: Request, res: Response) => {
+    try {
+        const { search } = req.query;
+
+        const searchSchema = z.string();
+
+        const requestData = searchSchema.safeParse(search);
+
+        if (!requestData.success) {
+            return res.status(200).json({ data: [] });
+        } else {
+            const selectQuery = await db
+                .select()
+                .from(cuisines)
+                .where(ilike(cuisines.name, `%${requestData.data}%`));
+
+            return res.status(200).json({ data: selectQuery });
+        }
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json(errorResponse());
     }
 };

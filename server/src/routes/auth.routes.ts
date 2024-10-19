@@ -2,6 +2,7 @@ import { NextFunction, Request, Response, Router } from "express";
 const router = Router();
 
 import {
+    isLoggedIn,
     loginController,
     logoutController,
     signUpController,
@@ -15,7 +16,7 @@ router.post("/signup", signUpController);
 router.post("/login", loginController);
 
 // logout
-router.post("/logout", logoutController);
+router.post("/logout", isLoggedIn, logoutController);
 
 // status
 router.get("/status", statusController);

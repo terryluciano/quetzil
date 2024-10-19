@@ -6,6 +6,7 @@ import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { eq, or } from "drizzle-orm";
 import { exists } from "drizzle-orm";
 import z from "zod";
+import { errorResponse } from "../utils/res.wrapper";
 
 const insertUserSchema = createInsertSchema(users, {
     password: (schema) =>
@@ -19,7 +20,9 @@ const insertUserSchema = createInsertSchema(users, {
 
 type UserInsertType = z.infer<typeof insertUserSchema>;
 
-const selectUserSchema = createSelectSchema(users).pick({
+const selectUserSchema = createSelectSchema(users, {
+    email: (schema) => schema.email.email(),
+}).pick({
     password: true,
     email: true,
 });
@@ -36,11 +39,9 @@ export const signUpController = async (req: Request, res: Response) => {
         });
 
         if (!requestData.success) {
-            console.log(requestData.error.errors[0]);
-            return res.status(400).json({
-                msg: requestData.error.errors[0].message,
-                error: true,
-            });
+            return res
+                .status(400)
+                .json(errorResponse(requestData.error.errors[0].message));
         }
 
         const existsCondition = db
@@ -53,9 +54,7 @@ export const signUpController = async (req: Request, res: Response) => {
             .where(exists(existsCondition));
 
         if (existsQuery.length > 0) {
-            return res
-                .status(409)
-                .json({ msg: "Email is already used", error: true });
+            return res.status(409).json(errorResponse("Email is already used"));
         } else {
             const hashedPassword = await bcrypt.hash(password, 10);
             const insertData: UserInsertType = {
@@ -67,16 +66,14 @@ export const signUpController = async (req: Request, res: Response) => {
         }
     } catch (e) {
         console.error(e);
-        return res
-            .status(500)
-            .json({ msg: "Internal Server Error", error: true });
+        return res.status(500).json(errorResponse());
     }
 };
 
 export const loginController = async (req: Request, res: Response) => {
     try {
         if (req.session.user) {
-            return res.status(200).json({ msg: "User is logged in" });
+            return res.status(200).json({ msg: "User is already logged in" });
         }
 
         const { email, password } = req.body;
@@ -87,10 +84,9 @@ export const loginController = async (req: Request, res: Response) => {
         });
 
         if (!requestData.success) {
-            console.log(requestData.error);
             return res
                 .status(400)
-                .json({ msg: requestData.error.errors[0].message });
+                .json(errorResponse(requestData.error.errors[0].message));
         }
 
         const selectQuery = await db
@@ -99,9 +95,7 @@ export const loginController = async (req: Request, res: Response) => {
             .where(eq(users.email, requestData.data.email));
 
         if (selectQuery.length == 0) {
-            return res
-                .status(404)
-                .json({ msg: "User does not exists", error: true });
+            return res.status(404).json(errorResponse("User does not exists"));
         }
 
         const comparePassword = await bcrypt.compare(
@@ -110,9 +104,7 @@ export const loginController = async (req: Request, res: Response) => {
         );
 
         if (!comparePassword) {
-            return res
-                .status(401)
-                .json({ msg: "Incorrect Password", error: true });
+            return res.status(401).json(errorResponse("Incorrect Password"));
         }
 
         const userData = selectQuery[0];
@@ -126,9 +118,7 @@ export const loginController = async (req: Request, res: Response) => {
         return res.status(200).json({ msg: "Login Successful" });
     } catch (e) {
         console.error(e);
-        return res
-            .status(500)
-            .json({ msg: "Internal Server Error", error: true });
+        return res.status(500).json(errorResponse());
     }
 };
 
@@ -138,23 +128,20 @@ export const logoutController = async (req: Request, res: Response) => {
             req.session.destroy((err) => {
                 if (err) {
                     console.error(err);
-                    return res.status(500).json({
-                        msg: "Failed to logout, please try again",
-                        error: true,
-                    });
+                    return res
+                        .status(500)
+                        .json(
+                            errorResponse("Failed to logout, please try again"),
+                        );
                 }
                 return res.status(200).json({ msg: "Logout Successful" });
             });
         } else {
-            return res
-                .status(400)
-                .json({ msg: "You are not logged in", error: true });
+            return res.status(400).json(errorResponse("You are not logged in"));
         }
     } catch (e) {
         console.error(e);
-        return res
-            .status(500)
-            .json({ msg: "Internal Server Error", error: true });
+        return res.status(500).json(errorResponse());
     }
 };
 
@@ -163,15 +150,11 @@ export const statusController = async (req: Request, res: Response) => {
         if (req.session.user) {
             return res.status(200).json({ msg: "User is logged in" });
         } else {
-            return res
-                .status(401)
-                .json({ msg: "User is not logged in", error: true });
+            return res.status(401).json(errorResponse("User is not logged in"));
         }
     } catch (e) {
         console.error(e);
-        return res
-            .status(500)
-            .json({ msg: "Internal Server Error", error: true });
+        return res.status(500).json(errorResponse());
     }
 };
 
@@ -182,16 +165,12 @@ export const isLoggedIn = async (
 ) => {
     try {
         if (!req.session.user) {
-            return res
-                .status(401)
-                .json({ msg: "User is not logged in", error: true });
+            return res.status(401).json(errorResponse("User is not logged in"));
         } else {
             return next();
         }
     } catch (e) {
         console.error(e);
-        return res
-            .status(500)
-            .json({ msg: "Internal Server Error", error: true });
+        return res.status(500).json(errorResponse());
     }
 };

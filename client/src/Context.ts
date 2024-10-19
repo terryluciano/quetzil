@@ -11,14 +11,14 @@ export const AuthContext = createContext<{
 export type Toast = {
     id: number;
     message: string;
-    type: "success" | "error" | "info";
+    type: "success" | "error";
     duration?: number;
 };
 
 export const ToastContext = createContext<{
     toasts: Toast[];
     setToasts: Dispatch<SetStateAction<Toast[]>>;
-    addToast: (toast: Toast) => void;
+    addToast: (toast: Pick<Toast, "message" | "type" | "duration">) => void;
 }>({
     toasts: [],
     setToasts: () => {},

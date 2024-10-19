@@ -66,7 +66,7 @@ const SignUp = () => {
                 type: "error",
             });
             return;
-        } else {
+        } else if (!requestProcessing) {
             axios
                 .post(`${API_URL}/auth/signup`, data, {
                     withCredentials: true,
