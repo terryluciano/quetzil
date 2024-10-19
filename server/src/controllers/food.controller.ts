@@ -1,8 +1,10 @@
-import { Request, Response } from "express";
-import { db } from "..";
-import { foodRatings, foodItems, restaurants } from "../schema";
+import { eq, exists, ilike } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
-import { exists, eq, and } from "drizzle-orm";
+import { Request, Response } from "express";
+import z from "zod";
+import { db } from "..";
+import { foodItems, foodRatings, restaurants } from "../schema";
+import { errorResponse } from "../utils/res.wrapper";
 
 const insertFoodRatingSchema = createInsertSchema(foodRatings, {
     rating: (schema) =>
@@ -24,10 +26,9 @@ export const addFoodRating = async (req: Request, res: Response) => {
         });
 
         if (!requestData.success) {
-            return res.status(400).json({
-                msg: requestData.error.errors[0].message,
-                error: true,
-            });
+            return res
+                .status(400)
+                .json(errorResponse(requestData.error.errors[0].message));
         } else {
             // check if food item exists
             const foodExistsQuery = await db
@@ -45,7 +46,7 @@ export const addFoodRating = async (req: Request, res: Response) => {
             if (foodExistsQuery.length == 0) {
                 return res
                     .status(404)
-                    .json({ msg: "Food Item does not exisit" });
+                    .json(errorResponse("Food Item does not exisit"));
             }
 
             // check if restaurant exists
@@ -69,7 +70,7 @@ export const addFoodRating = async (req: Request, res: Response) => {
             if (restaurantExistsQuery.length == 0) {
                 return res
                     .status(404)
-                    .json({ msg: "Restaurant does not exisit" });
+                    .json(errorResponse("Restaurant does not exisit"));
             }
 
             // insert
@@ -91,8 +92,30 @@ export const addFoodRating = async (req: Request, res: Response) => {
         }
     } catch (err) {
         console.error(err);
-        return res
-            .status(500)
-            .json({ msg: "Internal Server Error", error: true });
+        return res.status(500).json(errorResponse());
+    }
+};
+
+export const getFoodItems = async (req: Request, res: Response) => {
+    try {
+        const { search } = req.query;
+
+        const searchSchema = z.string();
+
+        const requestData = searchSchema.safeParse(search);
+
+        if (!requestData.success) {
+            return res.status(200).json({ data: [] });
+        } else {
+            const selectQuery = await db
+                .select()
+                .from(foodItems)
+                .where(ilike(foodItems.name, `%${requestData.data}%`));
+
+            return res.status(200).json({ data: selectQuery });
+        }
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json(errorResponse());
     }
 };
