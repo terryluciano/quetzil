@@ -16,7 +16,6 @@ import axios from "axios";
 import { useDebounce } from "use-debounce";
 import { ToastContext } from "../Context";
 import { useNavigate } from "react-router-dom";
-import { States } from "../utils/constants";
 
 const AddRestaurant = () => {
     const { addToast } = useContext(ToastContext);
@@ -190,7 +189,7 @@ const AddRestaurant = () => {
                         required
                     />
                     <InputField
-                        placeholder="Satte"
+                        placeholder="State"
                         divclassname="shadow-none"
                         ref={stateRef}
                         tabIndex={0}

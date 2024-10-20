@@ -2,11 +2,13 @@ import { Request, Response } from "express";
 import { db } from "..";
 import { cuisines, restaurantCuisines, restaurants } from "../schema";
 import { createInsertSchema } from "drizzle-zod";
-import { eq, and, exists } from "drizzle-orm";
+import { eq, and, exists, or } from "drizzle-orm";
 import z from "zod";
 import { ilike } from "drizzle-orm";
 import { errorResponse } from "../utils/res.wrapper";
 import { States } from "../utils/constants";
+import { createSelectSchema } from "drizzle-zod";
+import { sql } from "drizzle-orm";
 
 const insertRestaurantSchema = createInsertSchema(restaurants, {
     name: (schema) =>
@@ -24,6 +26,17 @@ type RestaurantCuisineInsertType = z.infer<
 
 const cuisineSchema = z.array(z.number());
 
+const selectSearchRestaurantSchema = createSelectSchema(restaurants, {
+    name: (schema) => schema.name.optional(),
+    state: (schema) => schema.state.optional(),
+    city: (schema) => schema.city.optional(),
+}).pick({
+    name: true,
+    state: true,
+    city: true,
+});
+
+// add restaurant
 export const addRestaurantController = async (req: Request, res: Response) => {
     try {
         const { name, cuisines, website, address, city, state, zipCode } =
@@ -143,6 +156,71 @@ export const addRestaurantController = async (req: Request, res: Response) => {
     }
 };
 
+// get restaurant search
+export const getRestaurants = async (req: Request, res: Response) => {
+    try {
+        const { restaurant, state, city } = req.query;
+
+        const requestData = selectSearchRestaurantSchema.safeParse({
+            name: restaurant,
+            state,
+            city,
+        });
+
+        if (!requestData.success) {
+            return res.status(200).json({ data: [] });
+        } else {
+            const searchQuery = await db
+                .select({
+                    id: restaurants.id,
+                    name: restaurants.name,
+                    address: restaurants.address,
+                    state: restaurants.state,
+                    city: restaurants.city,
+                    zipCode: restaurants.zipCode,
+                    website: restaurants.website,
+                    cuisines: sql`ARRAY_AGG(json_build_object('id', cuisines.id, 'name', cuisines.name)) AS cuisines`,
+                })
+                .from(restaurants)
+                .leftJoin(
+                    restaurantCuisines,
+                    eq(restaurantCuisines.restaurantId, restaurants.id),
+                )
+                .leftJoin(
+                    cuisines,
+                    eq(cuisines.id, restaurantCuisines.cuisineId),
+                )
+                .where(
+                    or(
+                        requestData.data.name != ""
+                            ? ilike(
+                                  restaurants.name,
+                                  `%${requestData.data.name}%`,
+                              )
+                            : undefined,
+                        and(
+                            ilike(
+                                restaurants.state,
+                                `%${requestData.data.state}%`,
+                            ),
+                            ilike(
+                                restaurants.city,
+                                `%${requestData.data.city}%`,
+                            ),
+                        ),
+                    ),
+                )
+                .groupBy(restaurants.id);
+
+            return res.status(200).json({ data: searchQuery });
+        }
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json(errorResponse());
+    }
+};
+
+// get cuisines
 export const getCuisines = async (req: Request, res: Response) => {
     try {
         const { search } = req.query;

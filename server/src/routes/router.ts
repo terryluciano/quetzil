@@ -1,5 +1,5 @@
 import { Router, Request, Response, NextFunction } from "express";
-import homeRoutes from "./home.routes";
+import homeRoutes from "./index.routes";
 import userRoutes from "./auth.routes";
 import restaurantRoutes from "./restaurant.routes";
 import foodRoutes from "./food.routes";
