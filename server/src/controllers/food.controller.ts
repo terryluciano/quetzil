@@ -3,8 +3,9 @@ import { createInsertSchema } from "drizzle-zod";
 import { Request, Response } from "express";
 import z from "zod";
 import { db } from "..";
-import { foodItems, foodRatings, restaurants } from "../schema";
+import { foodItems, foodRatings, restaurantFoodItems } from "../schema";
 import { errorResponse } from "../utils/res.wrapper";
+import { and } from "drizzle-orm";
 
 const insertFoodRatingSchema = createInsertSchema(foodRatings, {
     rating: (schema) =>
@@ -30,47 +31,37 @@ export const addFoodRating = async (req: Request, res: Response) => {
                 .status(400)
                 .json(errorResponse(requestData.error.errors[0].message));
         } else {
-            // check if food item exists
-            const foodExistsQuery = await db
+            const restaurantFoodItemExistsQuery = await db
                 .select()
-                .from(foodItems)
+                .from(restaurantFoodItems)
                 .where(
                     exists(
                         db
                             .select()
-                            .from(foodItems)
-                            .where(eq(foodItems.id, requestData.data.foodId)),
-                    ),
-                );
-
-            if (foodExistsQuery.length == 0) {
-                return res
-                    .status(404)
-                    .json(errorResponse("Food Item does not exisit"));
-            }
-
-            // check if restaurant exists
-            const restaurantExistsQuery = await db
-                .select()
-                .from(restaurants)
-                .where(
-                    exists(
-                        db
-                            .select()
-                            .from(restaurants)
+                            .from(restaurantFoodItems)
                             .where(
-                                eq(
-                                    restaurants.id,
-                                    requestData.data.restaurantId,
+                                and(
+                                    eq(
+                                        restaurantFoodItems.foodId,
+                                        requestData.data.foodId,
+                                    ),
+                                    eq(
+                                        restaurantFoodItems.restaurantId,
+                                        requestData.data.restaurantId,
+                                    ),
                                 ),
                             ),
                     ),
                 );
 
-            if (restaurantExistsQuery.length == 0) {
+            if (restaurantFoodItemExistsQuery.length == 0) {
                 return res
                     .status(404)
-                    .json(errorResponse("Restaurant does not exisit"));
+                    .json(
+                        errorResponse(
+                            "Restaurant does not offer this food item",
+                        ),
+                    );
             }
 
             // insert

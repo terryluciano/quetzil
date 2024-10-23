@@ -1,6 +1,12 @@
 import { Request, Response } from "express";
 import { db } from "..";
-import { cuisines, restaurantCuisines, restaurants } from "../schema";
+import {
+    cuisines,
+    foodItems,
+    restaurantCuisines,
+    restaurantFoodItems,
+    restaurants,
+} from "../schema";
 import { createInsertSchema } from "drizzle-zod";
 import { eq, and, exists, or } from "drizzle-orm";
 import z from "zod";
@@ -35,6 +41,8 @@ const selectSearchRestaurantSchema = createSelectSchema(restaurants, {
     state: true,
     city: true,
 });
+
+const insertRestaurantFoodItemSchema = createInsertSchema(restaurantFoodItems);
 
 // add restaurant
 export const addRestaurantController = async (req: Request, res: Response) => {
@@ -214,6 +222,75 @@ export const getRestaurants = async (req: Request, res: Response) => {
 
             return res.status(200).json({ data: searchQuery });
         }
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json(errorResponse());
+    }
+};
+
+// add food item to restaurant - POST
+export const addFoodItem = async (req: Request, res: Response) => {
+    try {
+        const { foodId, restaurantId } = req.body;
+
+        const requestData = insertRestaurantFoodItemSchema.safeParse({
+            foodId,
+            restaurantId,
+        });
+
+        if (!requestData.success) {
+            console.log(requestData.error);
+            return res
+                .status(400)
+                .json(errorResponse(requestData.error.errors[0].message));
+        }
+
+        const foodItemExistsQuery = await db
+            .select()
+            .from(foodItems)
+            .where(
+                exists(
+                    db
+                        .select()
+                        .from(foodItems)
+                        .where(eq(foodItems.id, requestData.data.foodId)),
+                ),
+            );
+
+        if (foodItemExistsQuery.length == 0) {
+            return res
+                .status(404)
+                .json(errorResponse("Food Item does not exisit"));
+        }
+
+        const restaurantExistsQuery = await db
+            .select()
+            .from(restaurants)
+            .where(
+                exists(
+                    db
+                        .select()
+                        .from(restaurants)
+                        .where(
+                            eq(restaurants.id, requestData.data.restaurantId),
+                        ),
+                ),
+            );
+
+        if (restaurantExistsQuery.length == 0) {
+            return res
+                .status(404)
+                .json(errorResponse("Restaurant does not exisit"));
+        }
+
+        await db
+            .insert(restaurantFoodItems)
+            .values(requestData.data)
+            .onConflictDoNothing();
+
+        return res.status(200).json({
+            msg: "Successfully add food item to restaurant",
+        });
     } catch (err) {
         console.error(err);
         return res.status(500).json(errorResponse());

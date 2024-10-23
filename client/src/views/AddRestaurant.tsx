@@ -1,3 +1,4 @@
+import axios from "axios";
 import {
     createRef,
     HTMLAttributes,
@@ -5,17 +6,13 @@ import {
     useEffect,
     useState,
 } from "react";
-import AuthFormWrapper from "../components/AuthFormWrapper";
-import {
-    DropdownField,
-    DropdownOptionType,
-    InputField,
-} from "../components/InputField";
-import { API_URL } from "../utils/url";
-import axios from "axios";
-import { useDebounce } from "use-debounce";
-import { ToastContext } from "../Context";
 import { useNavigate } from "react-router-dom";
+import { useDebounce } from "use-debounce";
+import AuthFormWrapper from "../components/AuthFormWrapper";
+import { DropdownField, DropdownOptionType } from "../components/DropdownField";
+import { InputField } from "../components/InputField";
+import { ToastContext } from "../Context";
+import { API_URL } from "../utils/url";
 
 const AddRestaurant = () => {
     const { addToast } = useContext(ToastContext);
