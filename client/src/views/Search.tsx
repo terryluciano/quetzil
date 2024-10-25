@@ -1,10 +1,11 @@
 import axios from "axios";
 import SearchForm from "../components/search/SearchForm";
 import { API_URL } from "../utils/url";
-import { useMemo, useState } from "react";
+import { useContext, useMemo, useState } from "react";
 import SearchResultsHeader from "../components/search/SearchResultsHeader";
 import SearchResult from "../components/search/SearchResult";
 import AddRatingModal from "../components/modals/AddRatingModal";
+import { AuthContext, ToastContext } from "../Context";
 
 export type SearchResultType = {
     restaurantId: number;
@@ -34,6 +35,9 @@ export type HandleOpenRatingModalType = (
 ) => void;
 
 const Search = () => {
+    const { isAuth } = useContext(AuthContext);
+    const { addToast } = useContext(ToastContext);
+
     const [results, setResults] = useState<SearchResultType[]>([]);
     const [sortBy, setSortBy] = useState<"desc" | "asc">("desc");
     const [currentFoodName, setCurrentFoodName] = useState<string | null>(null);
@@ -102,6 +106,12 @@ const Search = () => {
         restaurantId: number,
         restaurantName: string,
     ) => {
+        if (!isAuth) {
+            return addToast({
+                message: "Please login to add a rating",
+                type: "error",
+            });
+        }
         setCurrentRestaurantId(restaurantId);
         setCurrentRestaurantName(restaurantName);
         setOpenRatingModal(true);
