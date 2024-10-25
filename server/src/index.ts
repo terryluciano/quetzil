@@ -1,17 +1,17 @@
 // imports
-import express from "express";
-import helmet from "helmet";
 import cors from "cors";
-import postgres from "postgres";
-import { drizzle } from "drizzle-orm/postgres-js";
 import "dotenv/config";
-import router from "./routes/router";
-import session from "express-session";
+import { drizzle } from "drizzle-orm/postgres-js";
 import { createSelectSchema } from "drizzle-zod";
-import { cuisines, foodItems, users } from "./schema";
-import z from "zod";
-import DrizzleSessionStore from "./utils/drizzleSessionStore";
+import express from "express";
+import session from "express-session";
 import fs from "fs";
+import helmet from "helmet";
+import postgres from "postgres";
+import z from "zod";
+import router from "./routes/router";
+import { cuisines, foodItems, users } from "./schema";
+import DrizzleSessionStore from "./utils/drizzleSessionStore";
 
 // db
 const queryClient = postgres({
