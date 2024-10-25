@@ -1,4 +1,11 @@
-import { SearchResultType } from "../../views/Search";
+import {
+    SearchResultType,
+    HandleOpenRatingModalType,
+} from "../../views/Search";
+
+interface SearchResultProps extends SearchResultType {
+    handleOpenRatingModal: HandleOpenRatingModalType;
+}
 
 const SearchResult = ({
     restaurantId,
@@ -10,7 +17,12 @@ const SearchResult = ({
     cuisines,
     rating,
     hasRating,
-}: SearchResultType) => {
+    handleOpenRatingModal,
+}: SearchResultProps) => {
+    const handleOpenModal = () => {
+        handleOpenRatingModal(restaurantId, name);
+    };
+
     return (
         <div className="flex flex-row w-full justify-between items-center border-text border-solid border-1 p-4 rounded-lg">
             <div className="flex flex-col justify-start items-start text-text gap-2">
@@ -36,11 +48,17 @@ const SearchResult = ({
                 <p>
                     {address}, {city}, {state}, {zipCode}
                 </p>
-                <p className="text-placeholder-text text-xs font-normal cursor-pointer">
+                <p
+                    className="text-placeholder-text text-xs font-normal cursor-pointer"
+                    onClick={handleOpenModal}
+                >
                     Add a Rating &gt;
                 </p>
             </div>
-            <div className="bg-primary rounded-lg size-24 flex-center cursor-pointer">
+            <div
+                className="bg-primary rounded-lg size-24 flex-center cursor-pointer"
+                onClick={handleOpenModal}
+            >
                 <div
                     className={`font-semibold font-Fira-Sans text-center ${hasRating ? "text-4xl" : "text-xl text-wrap"}`}
                 >

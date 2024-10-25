@@ -4,6 +4,7 @@ import { API_URL } from "../utils/url";
 import { useMemo, useState } from "react";
 import SearchResultsHeader from "../components/search/SearchResultsHeader";
 import SearchResult from "../components/search/SearchResult";
+import AddRatingModal from "../components/modals/AddRatingModal";
 
 export type SearchResultType = {
     restaurantId: number;
@@ -22,13 +23,27 @@ export type SubmitOptions = {
     state?: string;
     city?: string;
     foodId: number;
+    foodName: string;
     cuisines?: (string | number)[];
 };
+
 export type OnSubmitFunction = (options: SubmitOptions) => Promise<void>;
+export type HandleOpenRatingModalType = (
+    restaurantId: number,
+    restaurantName: string,
+) => void;
 
 const Search = () => {
     const [results, setResults] = useState<SearchResultType[]>([]);
     const [sortBy, setSortBy] = useState<"desc" | "asc">("desc");
+    const [currentFoodName, setCurrentFoodName] = useState<string | null>(null);
+    const [currentFoodId, setCurrentFoodId] = useState<number | null>(null);
+    const [currentRestaurantId, setCurrentRestaurantId] = useState<
+        number | null
+    >(null);
+    const [currentRestaurantName, setCurrentRestaurantName] = useState<
+        string | null
+    >(null);
 
     const filterResults: SearchResultType[] = useMemo(() => {
         return results
@@ -54,6 +69,7 @@ const Search = () => {
         state,
         city,
         foodId,
+        foodName,
         cuisines,
     }) => {
         try {
@@ -72,27 +88,54 @@ const Search = () => {
             if (res.status === 200) {
                 setResults(res.data.data);
                 setSortBy("desc");
+                setCurrentFoodName(foodName);
+                setCurrentFoodId(foodId);
             }
         } catch (err) {
             console.error(err);
         }
     };
 
-    return (
-        <div className="my-12 flex flex-col justify-start items-center gap-12 w-full max-w-[1080px]">
-            <SearchForm onSubmit={onSubmit} />
+    const [openRatingModal, setOpenRatingModal] = useState(false);
 
-            <SearchResultsHeader
-                numberOfResults={numberOffResults}
-                sortBy={sortBy}
-                setSortBy={setSortBy}
-            />
-            <div className="flex flex-col gap-3 w-full">
-                {filterResults.map((result) => (
-                    <SearchResult key={result.restaurantId} {...result} />
-                ))}
+    const handleOpenRatingModal: HandleOpenRatingModalType = (
+        restaurantId: number,
+        restaurantName: string,
+    ) => {
+        setCurrentRestaurantId(restaurantId);
+        setCurrentRestaurantName(restaurantName);
+        setOpenRatingModal(true);
+    };
+
+    return (
+        <>
+            <div className="my-12 flex flex-col justify-start items-center gap-12 w-full max-w-[1080px]">
+                <SearchForm onSubmit={onSubmit} />
+
+                <SearchResultsHeader
+                    numberOfResults={numberOffResults}
+                    sortBy={sortBy}
+                    setSortBy={setSortBy}
+                />
+                <div className="flex flex-col gap-3 w-full">
+                    {filterResults.map((result) => (
+                        <SearchResult
+                            key={result.restaurantId}
+                            handleOpenRatingModal={handleOpenRatingModal}
+                            {...result}
+                        />
+                    ))}
+                </div>
             </div>
-        </div>
+            <AddRatingModal
+                open={openRatingModal}
+                setOpen={setOpenRatingModal}
+                restaurantId={currentRestaurantId}
+                restaurantName={currentRestaurantName}
+                foodId={currentFoodId}
+                foodName={currentFoodName}
+            />
+        </>
     );
 };
 

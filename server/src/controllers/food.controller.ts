@@ -270,3 +270,57 @@ export const getFoodItems = async (req: Request, res: Response) => {
         return res.status(500).json(errorResponse());
     }
 };
+
+export const getUserFoodRating = async (req: Request, res: Response) => {
+    try {
+        const { foodId, restaurantId } = req.query;
+
+        const requestSchema = z.object({
+            foodId: z.number(),
+            restaurantId: z.number(),
+        });
+
+        const requestData = requestSchema.safeParse({
+            foodId: Number(foodId),
+            restaurantId: Number(restaurantId),
+        });
+
+        if (!requestData.success) {
+            return res
+                .status(400)
+                .json(errorResponse(requestData.error.errors[0].message));
+        } else {
+            if (req.session.user && req.session.user.id) {
+                const selectQuery = await db
+                    .select({ rating: foodRatings.rating })
+                    .from(foodRatings)
+                    .where(
+                        and(
+                            eq(foodRatings.foodId, requestData.data.foodId),
+                            eq(
+                                foodRatings.restaurantId,
+                                requestData.data.restaurantId,
+                            ),
+                            eq(foodRatings.userId, req.session.user?.id),
+                        ),
+                    );
+
+                if (selectQuery.length == 0) {
+                    return res
+                        .status(404)
+                        .json(
+                            errorResponse(
+                                "User does not have a rating for this food item",
+                            ),
+                        );
+                }
+                return res.status(200).json({ data: selectQuery[0] });
+            }
+
+            return res.status(401).json(errorResponse("User is not logged in"));
+        }
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json(errorResponse());
+    }
+};

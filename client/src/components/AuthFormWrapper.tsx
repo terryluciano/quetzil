@@ -8,6 +8,7 @@ interface AuthFormWrapperProps {
     formTitle?: string;
     formSubTitle?: string;
     footerChildren?: React.ReactNode;
+    hideButton?: boolean;
     buttonText?: string;
     buttonProps?: HTMLAttributes<HTMLButtonElement>;
 }
@@ -21,6 +22,7 @@ const AuthFormWrapper = ({
     footerChildren,
     buttonText,
     buttonProps,
+    hideButton = false,
 }: AuthFormWrapperProps) => {
     return (
         <div
@@ -41,15 +43,17 @@ const AuthFormWrapper = ({
                 </div>
             )}
             {children}
-            <button
-                {...buttonProps}
-                className={twMerge(
-                    "bg-primary hover:bg-primary-hover transition-all duration-200 ease-in-out text text-xl font-medium font-Fira-Sans px-2 rounded h-10 hover:text-text-hover disabled:opacity-50",
-                    buttonProps?.className,
-                )}
-            >
-                {buttonText}
-            </button>
+            {!hideButton && (
+                <button
+                    {...buttonProps}
+                    className={twMerge(
+                        "bg-primary hover:bg-primary-hover transition-all duration-200 ease-in-out text text-xl font-medium font-Fira-Sans px-2 rounded h-10 hover:text-text-hover disabled:opacity-50",
+                        buttonProps?.className,
+                    )}
+                >
+                    {buttonText}
+                </button>
+            )}
             {footerChildren}
         </div>
     );

@@ -112,6 +112,7 @@ const SearchForm = ({ onSubmit }: SearchFormProps) => {
                 state: stateRef.current?.value,
                 city: cityRef.current?.value,
                 foodId: Number(selectedFood?.value),
+                foodName: selectedFood?.label,
                 cuisines: selectedOptions,
             });
         } else {
