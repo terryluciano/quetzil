@@ -1,6 +1,6 @@
 import { Link, redirect } from "react-router-dom";
 import AuthFormWrapper from "../components/AuthFormWrapper";
-import { createRef, HTMLProps, useContext, useEffect, useState } from "react";
+import { createRef, HTMLProps, useContext, useState } from "react";
 import { InputField } from "../components/InputField";
 import axios from "axios";
 import { API_URL } from "../utils/url";

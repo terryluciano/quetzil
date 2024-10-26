@@ -45,7 +45,8 @@ const AddRestaurant = () => {
             withCredentials: true,
         });
         if (res.status === 200) {
-            const optionData: DropdownOptionType[] = res.data.data
+            const data = res.data.data as { id: number; name: string }[];
+            const optionData: DropdownOptionType[] = data
                 .map((cuisine) => {
                     return {
                         value: cuisine.id,

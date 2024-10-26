@@ -1,7 +1,6 @@
 import { createRef, useContext, useEffect, useState } from "react";
 import { ModalWrapperProps, ModalWrapper } from "./ModalWrapper";
 import AuthFormWrapper from "../AuthFormWrapper";
-import { RangeField } from "../InputField";
 import axios from "axios";
 import { API_URL } from "../../utils/url";
 import { ToastContext } from "../../Context";
