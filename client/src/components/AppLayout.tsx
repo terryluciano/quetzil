@@ -16,11 +16,16 @@ const AppLayout = () => {
                 withCredentials: true,
             });
             if (res.status === 200) {
-                setIsAuth(true);
+                if (res.data.status) {
+                    setIsAuth(true);
+                } else {
+                    setIsAuth(false);
+                }
             } else {
                 setIsAuth(false);
             }
         } catch (err) {
+            setIsAuth(false);
             if (axios.isAxiosError(err)) {
                 return addToast({
                     message: err.response?.data?.msg,

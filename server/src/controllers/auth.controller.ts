@@ -148,7 +148,9 @@ export const logoutController = async (req: Request, res: Response) => {
 export const statusController = async (req: Request, res: Response) => {
     try {
         if (req.session.user) {
-            return res.status(200).json({ msg: "User is logged in" });
+            return res
+                .status(200)
+                .json({ msg: "User is logged in", status: true });
         } else {
             return res.status(401).json(errorResponse("User is not logged in"));
         }
