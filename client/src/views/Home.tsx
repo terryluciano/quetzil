@@ -2,6 +2,7 @@ import { createRef, useEffect, useRef, useState } from "react";
 import homeBanner from "../assets/home-banner.png";
 import searchIcon from "../assets/icons/search-icon.svg";
 import { InputField } from "../components/InputField";
+import { useNavigate } from "react-router-dom";
 
 const listOfFoodPlaceHolders = [
     "Cookies",
@@ -26,6 +27,8 @@ const SearchIcon = () => {
 };
 
 const Home = () => {
+    const navigate = useNavigate();
+
     const stateRef = createRef<HTMLInputElement>();
     const cityRef = createRef<HTMLInputElement>();
     const foodRef = createRef<HTMLInputElement>();
@@ -45,6 +48,10 @@ const Home = () => {
 
         return () => clearInterval(placeholderInterval.current);
     }, []);
+
+    const redirectToSearch = () => {
+        navigate("/search");
+    };
 
     return (
         <div className="w-full h-auto flex-center flex-col gap-12">
@@ -75,11 +82,13 @@ const Home = () => {
                             ref={stateRef}
                             type="text"
                             placeholder="State"
+                            onChange={redirectToSearch}
                         />
                         <InputField
                             ref={cityRef}
                             type="text"
                             placeholder="City"
+                            onChange={redirectToSearch}
                         />
                     </div>
                     <InputField
@@ -87,6 +96,7 @@ const Home = () => {
                         type="text"
                         placeholder={foodPlaceholder}
                         righticon={<SearchIcon />}
+                        onChange={redirectToSearch}
                     />
                 </div>
             </div>

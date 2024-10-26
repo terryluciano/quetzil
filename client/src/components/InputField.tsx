@@ -56,14 +56,16 @@ export const RangeField = forwardRef<HTMLInputElement, RangeFieldProps>(
                 ref={ref}
                 type="range"
                 value={props.currentValue}
-                onInput={(e) =>
-                    props.setCurrentValue(Number(e.currentTarget.value))
-                }
+                onInput={(e) => {
+                    props.setCurrentValue(Number(e.currentTarget.value));
+                }}
                 className={twMerge("w-full", props.className)}
                 min={props.min}
                 max={props.max}
                 step={props.step}
                 disabled={props.disabled}
+                onChange={props.onChange}
+                onBlur={props.onBlur}
             />
             <p className="flex-shrink-0 text-text font-Open-Sans min-w-[52px] text-right">
                 {props.currentValue} / {props.max}

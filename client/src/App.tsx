@@ -1,16 +1,17 @@
-import { useState } from "react";
+import { useState, lazy, Suspense } from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 
 import { AuthContext, Toast, ToastContext } from "./Context.ts";
 
 import AppLayout from "./components/AppLayout.tsx";
-import AddRating from "./views/AddRating.tsx";
-import Home from "./views/Home.tsx";
-import Login from "./views/Login.tsx";
-import Logout from "./views/Logout.tsx";
-import Search from "./views/Search.tsx";
-import SignUp from "./views/SignUp.tsx";
-import AddRestaurant from "./views/AddRestaurant.tsx";
+
+const AddRating = lazy(() => import("./views/AddRating.tsx"));
+const AddRestaurant = lazy(() => import("./views/AddRestaurant.tsx"));
+const Home = lazy(() => import("./views/Home.tsx"));
+const Login = lazy(() => import("./views/Login.tsx"));
+const Logout = lazy(() => import("./views/Logout.tsx"));
+const Search = lazy(() => import("./views/Search.tsx"));
+const SignUp = lazy(() => import("./views/SignUp.tsx"));
 
 function App() {
     const [isAuth, setIsAuth] = useState<boolean | null>(null);
@@ -43,21 +44,32 @@ function App() {
                 }}
             >
                 <BrowserRouter>
-                    <Routes>
-                        <Route path="/" element={<AppLayout />}>
-                            <Route path="/" element={<Home />} />
-                            <Route path="/login" element={<Login />} />
-                            <Route path="/logout" element={<Logout />} />
-                            <Route path="/sign-up" element={<SignUp />} />
-                            <Route path="/add-rating" element={<AddRating />} />
-                            <Route path="/search" element={<Search />} />
-                            <Route
-                                path="/add-restaurant"
-                                element={<AddRestaurant />}
-                            />
-                        </Route>
-                        <Route path="/*" element={<h1>404</h1>} />
-                    </Routes>
+                    <Suspense
+                        fallback={
+                            <div className="w-full h-full flex-center">
+                                <p>Loading...</p>
+                            </div>
+                        }
+                    >
+                        <Routes>
+                            <Route path="/" element={<AppLayout />}>
+                                <Route path="/" element={<Home />} />
+                                <Route path="/login" element={<Login />} />
+                                <Route path="/logout" element={<Logout />} />
+                                <Route path="/sign-up" element={<SignUp />} />
+                                <Route
+                                    path="/add-rating"
+                                    element={<AddRating />}
+                                />
+                                <Route path="/search" element={<Search />} />
+                                <Route
+                                    path="/add-restaurant"
+                                    element={<AddRestaurant />}
+                                />
+                            </Route>
+                            <Route path="/*" element={<h1>404</h1>} />
+                        </Routes>
+                    </Suspense>
                 </BrowserRouter>
             </ToastContext.Provider>
         </AuthContext.Provider>

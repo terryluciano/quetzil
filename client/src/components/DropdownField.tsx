@@ -89,7 +89,7 @@ export const DropdownField = ({
                 }
             />
             <div
-                className={`absolute top-full right-0 z-10 w-full transition-all duration-150 origin-top h-auto overflow-y-scroll flex flex-col justify-start items-center ${isOpen ? "opacity-100 max-h-48 scale-y-100" : "opacity-0 scale-y-0 max-h-0"}`}
+                className={`absolute top-full right-0 z-10 w-full transition-all duration-150 origin-top h-auto overflow-y-scroll flex flex-col justify-start items-center ${isOpen && dropdownOptions.length > 0 ? "opacity-100 max-h-48 scale-y-100" : "opacity-0 scale-y-0 max-h-0"}`}
             >
                 {dropdownOptions
                     .filter((option) => {

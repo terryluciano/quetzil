@@ -15,6 +15,7 @@ import { errorResponse } from "../utils/res.wrapper";
 import { States } from "../utils/constants";
 import { createSelectSchema } from "drizzle-zod";
 import { sql } from "drizzle-orm";
+import { count } from "drizzle-orm";
 
 const insertRestaurantSchema = createInsertSchema(restaurants, {
     name: (schema) =>
@@ -188,6 +189,7 @@ export const getRestaurants = async (req: Request, res: Response) => {
                     zipCode: restaurants.zipCode,
                     website: restaurants.website,
                     cuisines: sql`ARRAY_AGG(json_build_object('id', cuisines.id, 'name', cuisines.name)) AS cuisines`,
+                    foodItems: sql`ARRAY_AGG(json_build_object('id', restaurant_food_items.food_id, 'name', food_items.name)) AS foodItems`,
                 })
                 .from(restaurants)
                 .leftJoin(
@@ -198,29 +200,63 @@ export const getRestaurants = async (req: Request, res: Response) => {
                     cuisines,
                     eq(cuisines.id, restaurantCuisines.cuisineId),
                 )
+                .leftJoin(
+                    restaurantFoodItems,
+                    eq(restaurantFoodItems.restaurantId, restaurants.id),
+                )
+                .leftJoin(
+                    foodItems,
+                    eq(foodItems.id, restaurantFoodItems.foodId),
+                )
                 .where(
-                    or(
-                        requestData.data.name != ""
-                            ? ilike(
-                                  restaurants.name,
-                                  `%${requestData.data.name}%`,
-                              )
-                            : undefined,
-                        and(
-                            ilike(
-                                restaurants.state,
-                                `%${requestData.data.state}%`,
-                            ),
-                            ilike(
-                                restaurants.city,
-                                `%${requestData.data.city}%`,
-                            ),
+                    and(
+                        ilike(
+                            restaurants.name,
+                            `%${requestData.data.name || ""}%`,
+                        ),
+                        ilike(
+                            restaurants.state,
+                            `%${requestData.data.state || ""}%`,
+                        ),
+                        ilike(
+                            restaurants.city,
+                            `%${requestData.data.city || ""}%`,
                         ),
                     ),
                 )
                 .groupBy(restaurants.id);
 
-            return res.status(200).json({ data: searchQuery });
+            const filteredData = searchQuery as Array<{
+                id: number;
+                name: string;
+                address: string;
+                state: string;
+                city: string;
+                zipCode: number;
+                website: string | null;
+                cuisines: Array<{ id: number; name: string }>;
+                foodItems: Array<{ id: number; name: string }>;
+            }>;
+
+            // clea up the data - remove duplicate cuisines, remove cuisines id as null, remove duplicate food items, remove food item id as null
+            filteredData.forEach((restaurant) => {
+                restaurant.cuisines = restaurant.cuisines.filter(
+                    (cuisine) => cuisine.name != null,
+                );
+                restaurant.foodItems = restaurant.foodItems.filter(
+                    (foodItem) => foodItem.name != null,
+                );
+                restaurant.cuisines = restaurant.cuisines.filter(
+                    (obj1, index, self) =>
+                        index === self.findIndex((obj2) => obj2.id === obj1.id),
+                );
+                restaurant.foodItems = restaurant.foodItems.filter(
+                    (obj1, index, self) =>
+                        index === self.findIndex((obj2) => obj2.id === obj1.id),
+                );
+            });
+
+            return res.status(200).json({ data: filteredData });
         }
     } catch (err) {
         console.error(err);
