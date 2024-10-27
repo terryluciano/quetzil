@@ -15,6 +15,4 @@ router.get("/", async (req: Request, res: Response) => {
     }
 });
 
-// router.get("/search");
-
 export default router;

@@ -139,10 +139,6 @@ export const searchFoodItems = async (req: Request, res: Response) => {
                 .json(errorResponse("Food Item does not exisit"));
         }
 
-        // TODO - cuisines array has duplicates, suggestion is to have the ratings pulled from a different query and combine it with the food item query
-
-        // get the average rating for the food item
-        // return the address, state, city, zip code, website, cuisines, rating (of the food item) from the restaurant
         const searchQuery = await db
             .select({
                 restaurantId: restaurants.id,
