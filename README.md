@@ -39,6 +39,14 @@ SESSION_SECRET=
 npm install
 ```
 
+Side note: if you're postgres user requires a password you will need to update the `drizzle-kit` config in the `server/drizzle.config.ts` file.
+
+```ts
+    dbCredentials: {
+        url: `postgres://${process.env.DB_USER}:${process.env.DB_PASSWORD}@${process.env.DB_HOST}:${process.env.DB_PORT}/${process.env.DB_NAME}`,
+    },
+```
+
 5. Run the database migrations
 
 ```bash
