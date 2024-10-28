@@ -26,7 +26,7 @@ export const db = drizzle(queryClient);
 
 // server
 const server = express();
-const port = process.env.SERVER_PORT || 4000;
+const port = process.env.PORT || 4000;
 
 server.use(
     session({
