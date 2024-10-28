@@ -1,5 +1,5 @@
-worker: cd server
-worker: npm install
-worker: npm run migrate
-worker: npm run build
-web: npm start
+web: cd server
+web: npm install
+web: npm run migrate
+web: npm run build
+web: npm run start
