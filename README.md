@@ -19,7 +19,7 @@ If you have any problems setting up the project you can also visit the website [
 
 ```bash
 # SERVER
-SERVER_PORT="4000"
+PORT="8080"
 
 # DB
 DB_PORT=
@@ -30,6 +30,9 @@ DB_NAME="quetzil"
 
 # SESSION
 SESSION_SECRET=
+
+# ENV
+URL="http://localhost:3000" #"https://quetzil.com"
 ```
 
 3. Open your terminal and navigate to the `server` directory
@@ -39,7 +42,7 @@ SESSION_SECRET=
 npm install
 ```
 
-Side note: if you're postgres user requires a password you will need to update the `drizzle-kit` config in the `server/drizzle.config.ts` file.
+Side note: you might need to change the change the uri for postgres depanding on your postgres connection info. For this you will need to update the `drizzle-kit` config in the `server/drizzle.config.ts` file.
 
 ```ts
     dbCredentials: {

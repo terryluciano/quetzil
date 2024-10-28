@@ -1,5 +1,5 @@
 # SERVER
-SERVER_PORT="4000"
+PORT="8080"
 
 # DB
 DB_PORT=
@@ -10,3 +10,6 @@ DB_NAME="quetzil"
 
 # SESSION
 SESSION_SECRET=
+
+# ENV
+URL="http://localhost:3000" #"https://quetzil.com"
