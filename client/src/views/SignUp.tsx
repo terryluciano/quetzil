@@ -110,11 +110,13 @@ const SignUp = () => {
                         ref={passwordRef}
                         placeholder="Password"
                         divclassname="shadow-none"
+                        type="password"
                     />
                     <InputField
                         ref={confirmPasswordRef}
                         placeholder="Confirm Password"
                         divclassname="shadow-none"
+                        type="password"
                     />
                     <InputField
                         ref={firstNameRef}
