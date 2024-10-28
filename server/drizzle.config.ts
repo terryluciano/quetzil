@@ -8,7 +8,8 @@ export default {
     out: "./migrations",
     dialect: "postgresql",
     dbCredentials: {
-        url: `postgres://${process.env.DB_USER}@${process.env.DB_HOST}:${process.env.DB_PORT}/${process.env.DB_NAME}`,
+        ssl: "prefer",
+        url: `postgres://${process.env.DB_USER}:${process.env.DB_PASSWORD}@${process.env.DB_HOST}:${process.env.DB_PORT}/${process.env.DB_NAME}?sslmode=no-verify`,
     },
     strict: true,
     verbose: true,
