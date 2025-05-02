@@ -2,13 +2,20 @@
 
 import session from 'express-session';
 import { sessions } from '../schema';
-import { db } from '..';
+import { db } from '../services/db.service';
 import { eq, lte } from 'drizzle-orm';
 
 class DrizzleSessionStore extends session.Store {
 	constructor() {
 		super();
 	}
+
+	#getExpiresAt = (session: session.SessionData): Date => {
+		return (
+			session.cookie.expires ??
+			new Date(Date.now() + (session.cookie.maxAge || 0))
+		);
+	};
 
 	#deleteExpiredSessions = async () => {
 		try {
@@ -29,11 +36,19 @@ class DrizzleSessionStore extends session.Store {
 		callback?: (err?: any) => void
 	): Promise<void> {
 		try {
-			await db.insert(sessions).values({
-				sid: sid,
-				data: session,
-				expiresAt: session.cookie.expires,
-			});
+			const expiresAt = this.#getExpiresAt(session);
+
+			await db
+				.insert(sessions)
+				.values({
+					sid: sid,
+					data: session,
+					expiresAt: expiresAt,
+				})
+				.onConflictDoUpdate({
+					target: sessions.sid,
+					set: { data: session, expiresAt },
+				});
 			return callback?.(null);
 		} catch (e) {
 			return callback?.(e);
@@ -89,14 +104,16 @@ class DrizzleSessionStore extends session.Store {
 		callback?: () => void
 	): Promise<void> {
 		try {
+			const expiresAt = this.#getExpiresAt(session);
+
 			// update session
 			await db
 				.update(sessions)
-				.set({ expiresAt: session.cookie.expires })
+				.set({ expiresAt: expiresAt })
 				.where(eq(sessions.sid, sid));
 
 			// delete expired sessions
-			this.#deleteExpiredSessions();
+			await this.#deleteExpiredSessions();
 
 			return callback?.();
 		} catch (e) {
