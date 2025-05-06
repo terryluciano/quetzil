@@ -1,322 +1,322 @@
-import { and, eq, exists, ilike, or, sql } from "drizzle-orm";
-import { createInsertSchema } from "drizzle-zod";
-import { Request, Response } from "express";
-import z from "zod";
-import { db } from "..";
+import { and, eq, exists, ilike, or, sql } from 'drizzle-orm';
+import { createInsertSchema } from 'drizzle-zod';
+import { Request, Response } from 'express';
+import z from 'zod';
+import { db } from '../services/db.service';
 import {
-    cuisines,
-    foodItems,
-    foodRatings,
-    restaurantCuisines,
-    restaurantFoodItems,
-    restaurants,
-} from "../schema";
-import { errorResponse } from "../utils/res.wrapper";
-import { avg } from "drizzle-orm";
-import { desc } from "drizzle-orm";
+	cuisines,
+	foodItems,
+	foodRatings,
+	restaurantCuisines,
+	restaurantFoodItems,
+	restaurants,
+} from '../schema';
+import { errorResponse } from '../utils/res.wrapper';
+import { avg } from 'drizzle-orm';
+import { desc } from 'drizzle-orm';
 
 const insertFoodRatingSchema = createInsertSchema(foodRatings, {
-    rating: (schema) =>
-        schema.rating
-            .gte(0, { message: "Rating must be greater than or equal to 0" })
-            .lte(10, { message: "Rating must be less than or equal to 10" }),
+	rating: (schema) =>
+		schema.rating
+			.gte(0, { message: 'Rating must be greater than or equal to 0' })
+			.lte(10, { message: 'Rating must be less than or equal to 10' }),
 });
 
 // add food rating
 export const addFoodRating = async (req: Request, res: Response) => {
-    try {
-        const { foodId, restaurantId, rating } = req.body;
+	try {
+		const { foodId, restaurantId, rating } = req.body;
 
-        const requestData = insertFoodRatingSchema.safeParse({
-            foodId,
-            restaurantId,
-            rating,
-            userId: req.session.user?.id,
-        });
+		const requestData = insertFoodRatingSchema.safeParse({
+			foodId,
+			restaurantId,
+			rating,
+			userId: req.session.user?.id,
+		});
 
-        if (!requestData.success) {
-            return res
-                .status(400)
-                .json(errorResponse(requestData.error.errors[0].message));
-        } else {
-            const restaurantFoodItemExistsQuery = await db
-                .select()
-                .from(restaurantFoodItems)
-                .where(
-                    exists(
-                        db
-                            .select()
-                            .from(restaurantFoodItems)
-                            .where(
-                                and(
-                                    eq(
-                                        restaurantFoodItems.foodId,
-                                        requestData.data.foodId,
-                                    ),
-                                    eq(
-                                        restaurantFoodItems.restaurantId,
-                                        requestData.data.restaurantId,
-                                    ),
-                                ),
-                            ),
-                    ),
-                );
+		if (!requestData.success) {
+			return res
+				.status(400)
+				.json(errorResponse(requestData.error.errors[0].message));
+		} else {
+			const restaurantFoodItemExistsQuery = await db
+				.select()
+				.from(restaurantFoodItems)
+				.where(
+					exists(
+						db
+							.select()
+							.from(restaurantFoodItems)
+							.where(
+								and(
+									eq(
+										restaurantFoodItems.foodId,
+										requestData.data.foodId
+									),
+									eq(
+										restaurantFoodItems.restaurantId,
+										requestData.data.restaurantId
+									)
+								)
+							)
+					)
+				);
 
-            if (restaurantFoodItemExistsQuery.length == 0) {
-                return res
-                    .status(404)
-                    .json(
-                        errorResponse(
-                            "Restaurant does not offer this food item",
-                        ),
-                    );
-            }
+			if (restaurantFoodItemExistsQuery.length == 0) {
+				return res
+					.status(404)
+					.json(
+						errorResponse(
+							'Restaurant does not offer this food item'
+						)
+					);
+			}
 
-            // insert
-            await db
-                .insert(foodRatings)
-                .values(requestData.data)
-                .onConflictDoUpdate({
-                    target: [
-                        foodRatings.userId,
-                        foodRatings.foodId,
-                        foodRatings.restaurantId,
-                    ],
-                    set: { rating: requestData.data.rating },
-                });
+			// insert
+			await db
+				.insert(foodRatings)
+				.values(requestData.data)
+				.onConflictDoUpdate({
+					target: [
+						foodRatings.userId,
+						foodRatings.foodId,
+						foodRatings.restaurantId,
+					],
+					set: { rating: requestData.data.rating },
+				});
 
-            return res
-                .status(200)
-                .json({ msg: "Successfully upsert food rating" });
-        }
-    } catch (err) {
-        console.error(err);
-        return res.status(500).json(errorResponse());
-    }
+			return res
+				.status(200)
+				.json({ msg: 'Successfully upsert food rating' });
+		}
+	} catch (err) {
+		console.error(err);
+		return res.status(500).json(errorResponse());
+	}
 };
 
 // main search - POST
 export const searchFoodItems = async (req: Request, res: Response) => {
-    try {
-        const { foodId, state, city, cuisinesArr } = req.body;
+	try {
+		const { foodId, state, city, cuisinesArr } = req.body;
 
-        const searchSchema = z.object({
-            foodId: z.number(),
-            state: z.string().optional(),
-            city: z.string().optional(),
-            cuisines: z.array(z.number()).optional(),
-        });
+		const searchSchema = z.object({
+			foodId: z.number(),
+			state: z.string().optional(),
+			city: z.string().optional(),
+			cuisines: z.array(z.number()).optional(),
+		});
 
-        const requestData = searchSchema.safeParse({
-            foodId,
-            state,
-            city,
-            cuisines: cuisinesArr,
-        });
+		const requestData = searchSchema.safeParse({
+			foodId,
+			state,
+			city,
+			cuisines: cuisinesArr,
+		});
 
-        if (!requestData.success) {
-            console.log(requestData.error.errors);
-            return res
-                .status(400)
-                .json(errorResponse(requestData.error.errors[0].message));
-        }
+		if (!requestData.success) {
+			console.log(requestData.error.errors);
+			return res
+				.status(400)
+				.json(errorResponse(requestData.error.errors[0].message));
+		}
 
-        const foodItemExistsQuery = await db
-            .select()
-            .from(foodItems)
-            .where(
-                exists(
-                    db
-                        .select()
-                        .from(foodItems)
-                        .where(eq(foodItems.id, requestData.data.foodId)),
-                ),
-            );
+		const foodItemExistsQuery = await db
+			.select()
+			.from(foodItems)
+			.where(
+				exists(
+					db
+						.select()
+						.from(foodItems)
+						.where(eq(foodItems.id, requestData.data.foodId))
+				)
+			);
 
-        if (foodItemExistsQuery.length == 0) {
-            return res
-                .status(404)
-                .json(errorResponse("Food Item does not exisit"));
-        }
+		if (foodItemExistsQuery.length == 0) {
+			return res
+				.status(404)
+				.json(errorResponse('Food Item does not exisit'));
+		}
 
-        const searchQuery = await db
-            .select({
-                restaurantId: restaurants.id,
-                name: restaurants.name,
-                address: restaurants.address,
-                state: restaurants.state,
-                city: restaurants.city,
-                zipCode: restaurants.zipCode,
-                website: restaurants.website,
-                cuisines: sql`ARRAY_AGG(json_build_object('id', cuisines.id, 'name', cuisines.name)) AS cuisines`,
-                rating: avg(foodRatings.rating),
-            })
-            .from(restaurants)
-            .leftJoin(
-                foodRatings,
-                and(
-                    eq(foodRatings.restaurantId, restaurants.id),
-                    eq(foodRatings.foodId, requestData.data.foodId),
-                ),
-            )
-            .leftJoin(
-                restaurantCuisines,
-                eq(restaurantCuisines.restaurantId, restaurants.id),
-            )
-            .leftJoin(cuisines, eq(cuisines.id, restaurantCuisines.cuisineId))
-            .leftJoin(
-                restaurantFoodItems,
-                eq(restaurantFoodItems.restaurantId, restaurants.id),
-            )
-            .where(
-                and(
-                    eq(restaurantFoodItems.foodId, requestData.data.foodId),
-                    requestData.data.state != undefined &&
-                        requestData.data.state != "" &&
-                        requestData.data.city != undefined &&
-                        requestData.data.city != ""
-                        ? and(
-                              ilike(
-                                  restaurants.state,
-                                  `%${requestData.data.state}%`,
-                              ),
-                              ilike(
-                                  restaurants.city,
-                                  `%${requestData.data.city}%`,
-                              ),
-                          )
-                        : or(
-                              ilike(
-                                  restaurants.state,
-                                  `%${requestData.data.state}%`,
-                              ),
-                              ilike(
-                                  restaurants.city,
-                                  `%${requestData.data.city}%`,
-                              ),
-                          ),
-                    requestData.data.cuisines &&
-                        requestData.data.cuisines?.length > 0
-                        ? or(
-                              ...requestData.data.cuisines.map((cuisineId) =>
-                                  eq(restaurantCuisines.cuisineId, cuisineId),
-                              ),
-                          )
-                        : undefined,
-                ),
-            )
-            .groupBy(restaurants.id)
-            .orderBy(desc(avg(foodRatings.rating)));
+		const searchQuery = await db
+			.select({
+				restaurantId: restaurants.id,
+				name: restaurants.name,
+				address: restaurants.address,
+				state: restaurants.state,
+				city: restaurants.city,
+				zipCode: restaurants.zipCode,
+				website: restaurants.website,
+				cuisines: sql`ARRAY_AGG(json_build_object('id', cuisines.id, 'name', cuisines.name)) AS cuisines`,
+				rating: avg(foodRatings.rating),
+			})
+			.from(restaurants)
+			.leftJoin(
+				foodRatings,
+				and(
+					eq(foodRatings.restaurantId, restaurants.id),
+					eq(foodRatings.foodId, requestData.data.foodId)
+				)
+			)
+			.leftJoin(
+				restaurantCuisines,
+				eq(restaurantCuisines.restaurantId, restaurants.id)
+			)
+			.leftJoin(cuisines, eq(cuisines.id, restaurantCuisines.cuisineId))
+			.leftJoin(
+				restaurantFoodItems,
+				eq(restaurantFoodItems.restaurantId, restaurants.id)
+			)
+			.where(
+				and(
+					eq(restaurantFoodItems.foodId, requestData.data.foodId),
+					requestData.data.state != undefined &&
+						requestData.data.state != '' &&
+						requestData.data.city != undefined &&
+						requestData.data.city != ''
+						? and(
+								ilike(
+									restaurants.state,
+									`%${requestData.data.state}%`
+								),
+								ilike(
+									restaurants.city,
+									`%${requestData.data.city}%`
+								)
+						  )
+						: or(
+								ilike(
+									restaurants.state,
+									`%${requestData.data.state}%`
+								),
+								ilike(
+									restaurants.city,
+									`%${requestData.data.city}%`
+								)
+						  ),
+					requestData.data.cuisines &&
+						requestData.data.cuisines?.length > 0
+						? or(
+								...requestData.data.cuisines.map((cuisineId) =>
+									eq(restaurantCuisines.cuisineId, cuisineId)
+								)
+						  )
+						: undefined
+				)
+			)
+			.groupBy(restaurants.id)
+			.orderBy(desc(avg(foodRatings.rating)));
 
-        const filteredData = searchQuery as Array<{
-            restaurantId: number;
-            name: string;
-            address: string;
-            state: string;
-            city: string;
-            zipCode: number;
-            website: string | null;
-            cuisines: Array<{ id: number; name: string }>;
-            rating: string | null;
-        }>;
+		const filteredData = searchQuery as Array<{
+			restaurantId: number;
+			name: string;
+			address: string;
+			state: string;
+			city: string;
+			zipCode: number;
+			website: string | null;
+			cuisines: Array<{ id: number; name: string }>;
+			rating: string | null;
+		}>;
 
-        // clean up the data - remove duplicate cuisines
-        filteredData.forEach((restaurant) => {
-            restaurant.cuisines = restaurant.cuisines.filter(
-                (obj1, index, self) =>
-                    index === self.findIndex((obj2) => obj2.id === obj1.id),
-            );
-        });
+		// clean up the data - remove duplicate cuisines
+		filteredData.forEach((restaurant) => {
+			restaurant.cuisines = restaurant.cuisines.filter(
+				(obj1, index, self) =>
+					index === self.findIndex((obj2) => obj2.id === obj1.id)
+			);
+		});
 
-        return res.status(200).json({
-            data: filteredData,
-        });
-    } catch (err) {
-        console.error(err);
-        return res.status(500).json(errorResponse());
-    }
+		return res.status(200).json({
+			data: filteredData,
+		});
+	} catch (err) {
+		console.error(err);
+		return res.status(500).json(errorResponse());
+	}
 };
 
 export const getFoodItems = async (req: Request, res: Response) => {
-    try {
-        const { search, all } = req.query;
+	try {
+		const { search, all } = req.query;
 
-        if (all == "true") {
-            const selectQuery = await db.select().from(foodItems);
+		if (all == 'true') {
+			const selectQuery = await db.select().from(foodItems);
 
-            return res.status(200).json({ data: selectQuery });
-        } else {
-            const searchSchema = z.string();
+			return res.status(200).json({ data: selectQuery });
+		} else {
+			const searchSchema = z.string();
 
-            const requestData = searchSchema.safeParse(search);
+			const requestData = searchSchema.safeParse(search);
 
-            if (!requestData.success) {
-                return res.status(200).json({ data: [] });
-            } else {
-                const selectQuery = await db
-                    .select()
-                    .from(foodItems)
-                    .where(ilike(foodItems.name, `%${requestData.data}%`));
+			if (!requestData.success) {
+				return res.status(200).json({ data: [] });
+			} else {
+				const selectQuery = await db
+					.select()
+					.from(foodItems)
+					.where(ilike(foodItems.name, `%${requestData.data}%`));
 
-                return res.status(200).json({ data: selectQuery });
-            }
-        }
-    } catch (err) {
-        console.error(err);
-        return res.status(500).json(errorResponse());
-    }
+				return res.status(200).json({ data: selectQuery });
+			}
+		}
+	} catch (err) {
+		console.error(err);
+		return res.status(500).json(errorResponse());
+	}
 };
 
 export const getUserFoodRating = async (req: Request, res: Response) => {
-    try {
-        const { foodId, restaurantId } = req.query;
+	try {
+		const { foodId, restaurantId } = req.query;
 
-        const requestSchema = z.object({
-            foodId: z.number(),
-            restaurantId: z.number(),
-        });
+		const requestSchema = z.object({
+			foodId: z.number(),
+			restaurantId: z.number(),
+		});
 
-        const requestData = requestSchema.safeParse({
-            foodId: Number(foodId),
-            restaurantId: Number(restaurantId),
-        });
+		const requestData = requestSchema.safeParse({
+			foodId: Number(foodId),
+			restaurantId: Number(restaurantId),
+		});
 
-        if (!requestData.success) {
-            return res
-                .status(400)
-                .json(errorResponse(requestData.error.errors[0].message));
-        } else {
-            if (req.session.user && req.session.user.id) {
-                const selectQuery = await db
-                    .select({ rating: foodRatings.rating })
-                    .from(foodRatings)
-                    .where(
-                        and(
-                            eq(foodRatings.foodId, requestData.data.foodId),
-                            eq(
-                                foodRatings.restaurantId,
-                                requestData.data.restaurantId,
-                            ),
-                            eq(foodRatings.userId, req.session.user?.id),
-                        ),
-                    );
+		if (!requestData.success) {
+			return res
+				.status(400)
+				.json(errorResponse(requestData.error.errors[0].message));
+		} else {
+			if (req.session.user && req.session.user.id) {
+				const selectQuery = await db
+					.select({ rating: foodRatings.rating })
+					.from(foodRatings)
+					.where(
+						and(
+							eq(foodRatings.foodId, requestData.data.foodId),
+							eq(
+								foodRatings.restaurantId,
+								requestData.data.restaurantId
+							),
+							eq(foodRatings.userId, req.session.user?.id)
+						)
+					);
 
-                if (selectQuery.length == 0) {
-                    return res
-                        .status(404)
-                        .json(
-                            errorResponse(
-                                "User does not have a rating for this food item",
-                            ),
-                        );
-                }
-                return res.status(200).json({ data: selectQuery[0] });
-            }
+				if (selectQuery.length == 0) {
+					return res
+						.status(404)
+						.json(
+							errorResponse(
+								'User does not have a rating for this food item'
+							)
+						);
+				}
+				return res.status(200).json({ data: selectQuery[0] });
+			}
 
-            return res.status(401).json(errorResponse("User is not logged in"));
-        }
-    } catch (err) {
-        console.error(err);
-        return res.status(500).json(errorResponse());
-    }
+			return res.status(401).json(errorResponse('User is not logged in'));
+		}
+	} catch (err) {
+		console.error(err);
+		return res.status(500).json(errorResponse());
+	}
 };
